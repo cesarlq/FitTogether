@@ -14,12 +14,12 @@ const DayDetailScreen = ({ route, navigation }: any) => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
-          <Text style={styles.noData}>No data for this day.</Text>
+          <Text style={styles.noData}>Sin datos para este día.</Text>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => navigation.navigate('Log', { date })}
+            onPress={() => navigation.navigate('EditMeal', { date })}
           >
-            <Text style={styles.actionBtnText}>Log Now</Text>
+            <Text style={styles.actionBtnText}>Registrar Ahora</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -33,56 +33,56 @@ const DayDetailScreen = ({ route, navigation }: any) => {
           <Text style={styles.dateText}>{format(parseISO(date), 'EEEE, MMMM do')}</Text>
           <View style={[styles.statusBadge, { backgroundColor: log.completed ? COLORS.success + '33' : COLORS.fail + '33' }]}>
             <Text style={{ color: log.completed ? COLORS.success : COLORS.fail, fontWeight: 'bold' }}>
-              {log.completed ? 'Goal Met' : 'Goal Missed'}
+              {log.completed ? 'Meta Cumplida' : 'Meta No Cumplida'}
             </Text>
           </View>
         </Card>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Logged Meals</Text>
+          <Text style={styles.sectionTitle}>Comidas Registradas</Text>
           <Card style={styles.mealItem}>
-            <Text style={styles.mealTitle}>🌅 Breakfast</Text>
-            <Text style={styles.mealValue}>{log.breakfast || 'Not logged'}</Text>
+            <Text style={styles.mealTitle}>Desayuno</Text>
+            <Text style={styles.mealValue}>{log.breakfast || 'Sin registrar'}</Text>
           </Card>
           <Card style={styles.mealItem}>
-            <Text style={styles.mealTitle}>☀️ Lunch</Text>
-            <Text style={styles.mealValue}>{log.lunch || 'Not logged'}</Text>
+            <Text style={styles.mealTitle}>Almuerzo</Text>
+            <Text style={styles.mealValue}>{log.lunch || 'Sin registrar'}</Text>
           </Card>
           <Card style={styles.mealItem}>
-            <Text style={styles.mealTitle}>🌙 Dinner</Text>
-            <Text style={styles.mealValue}>{log.dinner || 'Not logged'}</Text>
+            <Text style={styles.mealTitle}>Cena</Text>
+            <Text style={styles.mealValue}>{log.dinner || 'Sin registrar'}</Text>
           </Card>
           <Card style={styles.mealItem}>
-            <Text style={styles.mealTitle}>🍪 Snacks</Text>
-            <Text style={styles.mealValue}>{log.snacks || 'Not logged'}</Text>
+            <Text style={styles.mealTitle}>Snacks</Text>
+            <Text style={styles.mealValue}>{log.snacks || 'Sin registrar'}</Text>
           </Card>
         </View>
 
-        {log.notes && (
+        {log.notes ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Daily Notes</Text>
+            <Text style={styles.sectionTitle}>Notas del Día</Text>
             <Card>
               <Text style={styles.notesText}>{log.notes}</Text>
             </Card>
           </View>
-        )}
+        ) : null}
 
         <View style={styles.actions}>
            <TouchableOpacity
              style={[styles.btn, { backgroundColor: COLORS.primary }]}
-             onPress={() => navigation.navigate('Log', { date })}
+             onPress={() => navigation.navigate('EditMeal', { date })}
            >
-             <Text style={styles.btnText}>Edit Entry</Text>
+             <Text style={styles.btnText}>Editar Registro</Text>
            </TouchableOpacity>
            <TouchableOpacity
              style={[styles.btn, { backgroundColor: COLORS.slate900, marginTop: SPACING.md }]}
              onPress={() => {
                 toggleComplete(date);
-                Alert.alert('Updated', 'Status changed.');
+                Alert.alert('Actualizado', 'Estado cambiado.');
              }}
            >
              <Text style={[styles.btnText, { color: COLORS.white }]}>
-               Toggle Completion Status
+               Cambiar Estado
              </Text>
            </TouchableOpacity>
         </View>

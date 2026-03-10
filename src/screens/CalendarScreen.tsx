@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
 import { useStore } from '../store/useStore';
 import { COLORS, SPACING } from '../constants/theme';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, addMonths, subMonths } from 'date-fns';
 import Card from '../components/Card';
 
 const CalendarScreen = ({ navigation }: any) => {
   const { dailyLogs } = useStore();
-  const currentMonth = new Date();
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart);
@@ -17,6 +18,21 @@ const CalendarScreen = ({ navigation }: any) => {
     start: calendarStart,
     end: calendarEnd,
   });
+
+  // Calculate real completion rate for displayed month
+  const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const monthLogged = monthDays.filter(d => {
+    const key = format(d, 'yyyy-MM-dd');
+    return dailyLogs[key]?.completed;
+  }).length;
+  const monthTotal = monthDays.filter(d => {
+    const key = format(d, 'yyyy-MM-dd');
+    return !!dailyLogs[key];
+  }).length;
+  const completionRate = monthTotal > 0 ? Math.round((monthLogged / monthTotal) * 100) : 0;
+
+  const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
+  const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
 
   const renderDay = (day: Date) => {
     const dateStr = format(day, 'yyyy-MM-dd');
@@ -50,22 +66,28 @@ const CalendarScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Dietary Calendar</Text>
+        <Text style={styles.headerTitle}>Calendario Dietético</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.monthSelector}>
-          <Text style={styles.chevron}>‹</Text>
+          <TouchableOpacity onPress={handlePrevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Text style={styles.chevron}>‹</Text>
+          </TouchableOpacity>
           <View style={styles.monthInfo}>
             <Text style={styles.monthText}>{format(currentMonth, 'MMMM yyyy')}</Text>
-            <Text style={styles.completionRate}>82% Goals Met</Text>
+            <Text style={styles.completionRate}>
+              {monthTotal > 0 ? `${completionRate}% Metas Cumplidas` : 'Sin datos aún'}
+            </Text>
           </View>
-          <Text style={styles.chevron}>›</Text>
+          <TouchableOpacity onPress={handleNextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.calendarGrid}>
           <View style={styles.weekDays}>
-            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
+            {['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'].map(d => (
               <Text key={d} style={styles.weekDayText}>{d}</Text>
             ))}
           </View>
@@ -75,14 +97,14 @@ const CalendarScreen = ({ navigation }: any) => {
         </View>
 
         <View style={styles.legend}>
-           <Text style={styles.sectionTitle}>Activity Legend</Text>
+           <Text style={styles.sectionTitle}>Leyenda de Actividad</Text>
            <Card style={styles.legendItem}>
               <View style={[styles.iconBox, { backgroundColor: COLORS.success + '33' }]}>
                  <Text style={{ color: COLORS.success }}>✓</Text>
               </View>
               <View>
-                 <Text style={styles.legendTitle}>Diet Goal Met</Text>
-                 <Text style={styles.legendSub}>Calorie and macro targets achieved</Text>
+                 <Text style={styles.legendTitle}>Meta Dietética Cumplida</Text>
+                 <Text style={styles.legendSub}>Objetivos de calorías y macros alcanzados</Text>
               </View>
            </Card>
            <Card style={styles.legendItem}>
@@ -90,17 +112,17 @@ const CalendarScreen = ({ navigation }: any) => {
                  <Text style={{ color: COLORS.fail }}>✕</Text>
               </View>
               <View>
-                 <Text style={styles.legendTitle}>Goal Not Met</Text>
-                 <Text style={styles.legendSub}>Exceeded limits or missed targets</Text>
+                 <Text style={styles.legendTitle}>Meta No Cumplida</Text>
+                 <Text style={styles.legendSub}>Excedió límites o no cumplió objetivos</Text>
               </View>
            </Card>
            <Card style={styles.legendItem}>
               <View style={[styles.iconBox, { backgroundColor: COLORS.slate100 }]}>
-                 <Text style={{ color: COLORS.slate400 }}>⋯</Text>
+                 <Text style={{ color: COLORS.slate400 }}>-</Text>
               </View>
               <View>
-                 <Text style={styles.legendTitle}>No Data Recorded</Text>
-                 <Text style={styles.legendSub}>Entries missing for this day</Text>
+                 <Text style={styles.legendTitle}>Sin Datos Registrados</Text>
+                 <Text style={styles.legendSub}>Sin entradas para este día</Text>
               </View>
            </Card>
         </View>
@@ -136,8 +158,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   chevron: {
-    fontSize: 24,
-    color: COLORS.slate400,
+    fontSize: 28,
+    color: COLORS.primary,
+    fontWeight: 'bold',
+    paddingHorizontal: SPACING.sm,
   },
   monthInfo: {
     alignItems: 'center',

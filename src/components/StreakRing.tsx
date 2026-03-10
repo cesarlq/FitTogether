@@ -42,7 +42,7 @@ const StreakRing = ({ streak, maxStreak = 30, size = 200 }: StreakRingProps) => 
       </Svg>
       <View style={styles.textContainer}>
         <Text style={styles.streakNumber}>{streak}</Text>
-        <Text style={styles.streakLabel}>DAY STREAK</Text>
+        <Text style={styles.streakLabel}>DÍAS DE RACHA</Text>
       </View>
     </View>
   );

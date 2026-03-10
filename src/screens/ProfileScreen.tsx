@@ -1,21 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image, ScrollView, Alert, Linking } from 'react-native';
 import { useStore } from '../store/useStore';
 import { COLORS, SPACING } from '../constants/theme';
 import Card from '../components/Card';
 import { Ionicons } from '@expo/vector-icons';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }: any) => {
   const { userProfile, resetChallenge } = useStore();
 
   const handleReset = () => {
     Alert.alert(
-      'Reset Challenge',
-      'Are you sure you want to reset all your progress? This cannot be undone.',
+      'Reiniciar Reto',
+      '¿Estás seguro de que quieres reiniciar todo tu progreso? Esto no se puede deshacer.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Reset',
+          text: 'Reiniciar',
           style: 'destructive',
           onPress: () => resetChallenge()
         },
@@ -27,7 +27,10 @@ const ProfileScreen = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <View style={styles.avatarContainer}>
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={() => navigation.navigate('EditProfile')}
+          >
             <Image
               source={{ uri: 'https://i.pravatar.cc/150?u=fit-together-user' }}
               style={styles.avatar}
@@ -35,50 +38,68 @@ const ProfileScreen = () => {
             <View style={styles.editBadge}>
               <Ionicons name="pencil" size={12} color={COLORS.slate900} />
             </View>
-          </View>
+          </TouchableOpacity>
           <Text style={styles.name}>{userProfile.name}</Text>
-          <Text style={styles.bio}>Healthy living journey since Jan 2024</Text>
+          <Text style={styles.bio}>Camino de vida saludable desde Ene 2024</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Stats Overview</Text>
+          <Text style={styles.sectionTitle}>Resumen de Estadísticas</Text>
           <View style={styles.grid}>
             <Card style={styles.statBox}>
               <Text style={styles.statValue}>{userProfile.currentWeight}kg</Text>
-              <Text style={styles.statLabel}>Current Weight</Text>
+              <Text style={styles.statLabel}>Peso Actual</Text>
             </Card>
             <Card style={styles.statBox}>
-              <Text style={styles.statValue}>1,840</Text>
-              <Text style={styles.statLabel}>Avg Calories</Text>
+              <Text style={styles.statValue}>{userProfile.goalWeight}kg</Text>
+              <Text style={styles.statLabel}>Peso Meta</Text>
             </Card>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Settings</Text>
+          <Text style={styles.sectionTitle}>Configuración de Cuenta</Text>
           <Card style={styles.menuCard}>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>Edit Profile</Text>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="person-outline" size={20} color={COLORS.slate500} />
+                <Text style={styles.menuText}>Editar Perfil</Text>
+              </View>
               <Ionicons name="chevron-forward" size={20} color={COLORS.slate400} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>Notification Settings</Text>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => Alert.alert('Notificaciones', 'Configuración de notificaciones próximamente.')}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="notifications-outline" size={20} color={COLORS.slate500} />
+                <Text style={styles.menuText}>Configuración de Notificaciones</Text>
+              </View>
               <Ionicons name="chevron-forward" size={20} color={COLORS.slate400} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>Privacy Policy</Text>
+            <TouchableOpacity
+              style={[styles.menuItem, { borderBottomWidth: 0 }]}
+              onPress={() => Alert.alert('Política de Privacidad', 'Política de privacidad disponible en el lanzamiento.')}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="shield-outline" size={20} color={COLORS.slate500} />
+                <Text style={styles.menuText}>Política de Privacidad</Text>
+              </View>
               <Ionicons name="chevron-forward" size={20} color={COLORS.slate400} />
             </TouchableOpacity>
           </Card>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Danger Zone</Text>
+          <Text style={styles.sectionTitle}>Zona de Peligro</Text>
           <TouchableOpacity
             style={styles.resetBtn}
             onPress={handleReset}
           >
-            <Text style={styles.resetBtnText}>Reset Challenge Progress</Text>
+            <Text style={styles.resetBtnText}>Reiniciar Progreso del Reto</Text>
           </TouchableOpacity>
         </View>
 
@@ -175,13 +196,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.slate100,
   },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
   menuText: {
     fontSize: 16,
     color: COLORS.slate900,
-  },
-  chevron: {
-    fontSize: 24,
-    color: COLORS.slate400,
   },
   resetBtn: {
     backgroundColor: COLORS.white,

@@ -20,13 +20,13 @@ const MealSection = ({ title, icon, value, onChangeText, onSave }: MealSectionPr
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder={`What did you have for ${title.toLowerCase()}?`}
+          placeholder={`¿Qué comiste en el/la ${title.toLowerCase()}?`}
           value={value}
           onChangeText={onChangeText}
           multiline
         />
         <TouchableOpacity style={styles.addButton} onPress={onSave}>
-          <Text style={styles.addButtonText}>Save</Text>
+          <Text style={styles.addButtonText}>Guardar</Text>
         </TouchableOpacity>
       </View>
     </View>

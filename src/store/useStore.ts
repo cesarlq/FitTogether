@@ -33,6 +33,7 @@ interface StoreActions {
   toggleComplete: (date: string) => void;
   updateNotes: (date: string, notes: string) => void;
   updateProfile: (profile: Partial<UserProfile>) => void;
+  logWeight: (weight: number) => void;
   resetChallenge: () => void;
   setInitialData: () => void;
 }
@@ -102,6 +103,25 @@ export const useStore = create<FitTogetherState & StoreActions>()(
         userProfile: { ...state.userProfile, ...profile }
       })),
 
+      logWeight: (weight) => set((state) => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const history = [...state.userProfile.weightHistory];
+        // Replace if already logged today, otherwise add new entry
+        const todayIndex = history.findIndex(h => h.date === today);
+        if (todayIndex >= 0) {
+          history[todayIndex] = { date: today, weight };
+        } else {
+          history.push({ date: today, weight });
+        }
+        return {
+          userProfile: {
+            ...state.userProfile,
+            currentWeight: weight,
+            weightHistory: history,
+          }
+        };
+      }),
+
       resetChallenge: () => set({
         dailyLogs: {},
         currentStreak: 0,
@@ -118,10 +138,10 @@ export const useStore = create<FitTogetherState & StoreActions>()(
             const ds = format(d, 'yyyy-MM-dd');
             mockLogs[ds] = {
               date: ds,
-              breakfast: 'Oatmeal',
-              lunch: 'Salad',
-              dinner: 'Chicken',
-              snacks: 'Apple',
+              breakfast: 'Avena',
+              lunch: 'Ensalada',
+              dinner: 'Pollo',
+              snacks: 'Manzana',
               completed: i !== 4 && i !== 11, // Some missed days
             };
           }

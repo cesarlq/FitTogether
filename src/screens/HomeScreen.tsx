@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, SafeAreaView, Alert } from 'react-native';
 import { useStore } from '../store/useStore';
 import { COLORS, SPACING } from '../constants/theme';
 import Card from '../components/Card';
 import StreakRing from '../components/StreakRing';
 import ProgressBar from '../components/ProgressBar';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
+
+const WEEKDAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 const HomeScreen = ({ navigation }: any) => {
   const { currentStreak, dailyLogs, partnerData, toggleComplete, setInitialData } = useStore();
@@ -21,13 +23,30 @@ const HomeScreen = ({ navigation }: any) => {
 
   const mealCount = todayLog ? [todayLog.breakfast, todayLog.lunch, todayLog.dinner].filter(m => m.length > 0).length : 0;
 
+  // Real last 7 days data
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const date = subDays(new Date(), 6 - i);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const log = dailyLogs[dateStr];
+    return {
+      label: WEEKDAY_LABELS[i],
+      completed: log?.completed || false,
+      hasData: !!log,
+    };
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Image source={{ uri: 'https://i.pravatar.cc/150?u=sam' }} style={styles.avatar} />
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <Image source={{ uri: 'https://i.pravatar.cc/150?u=sam' }} style={styles.avatar} />
+          </TouchableOpacity>
           <Text style={styles.appName}>FitTogether</Text>
-          <TouchableOpacity style={styles.notificationBtn}>
+          <TouchableOpacity
+            style={styles.notificationBtn}
+            onPress={() => Alert.alert('Notificaciones', 'No hay notificaciones nuevas.')}
+          >
             <Ionicons name="notifications" size={20} color={COLORS.slate900} />
           </TouchableOpacity>
         </View>
@@ -35,21 +54,21 @@ const HomeScreen = ({ navigation }: any) => {
         <View style={styles.streakSection}>
           <StreakRing streak={currentStreak} />
           <Text style={styles.streakQuote}>
-            Your weekly consistency is <Text style={styles.highlight}>amazing!</Text> Keep it up.
+            Tu consistencia semanal es <Text style={styles.highlight}>increíble!</Text> Sigue así.
           </Text>
         </View>
 
         <Card style={styles.weekCard}>
-          <Text style={styles.cardTitle}>Last 7 Days</Text>
+          <Text style={styles.cardTitle}>Últimos 7 Días</Text>
           <View style={styles.weekRow}>
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+            {last7Days.map((day, i) => (
               <View key={i} style={styles.dayItem}>
-                <Text style={styles.dayLabel}>{day}</Text>
-                <View style={[styles.dayCircle, i < 4 ? styles.completedCircle : styles.pendingCircle]}>
+                <Text style={styles.dayLabel}>{day.label}</Text>
+                <View style={[styles.dayCircle, day.completed ? styles.completedCircle : styles.pendingCircle]}>
                    <Ionicons
-                     name={i < 4 ? "checkmark" : "ellipse-outline"}
+                     name={day.completed ? "checkmark" : "ellipse-outline"}
                      size={12}
-                     color={i < 4 ? COLORS.primary : COLORS.slate400}
+                     color={day.completed ? COLORS.primary : COLORS.slate400}
                    />
                 </View>
               </View>
@@ -59,14 +78,16 @@ const HomeScreen = ({ navigation }: any) => {
 
         <Card style={styles.statusCard}>
           <View style={styles.statusHeader}>
-            <Text style={styles.cardTitle}>Today's Status</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{isCompleted ? 'Completed' : 'In Progress'}</Text>
+            <Text style={styles.cardTitle}>Estado de Hoy</Text>
+            <View style={[styles.badge, isCompleted && styles.badgeCompleted]}>
+              <Text style={[styles.badgeText, isCompleted && styles.badgeTextCompleted]}>
+                {isCompleted ? 'Completado' : 'En Progreso'}
+              </Text>
             </View>
           </View>
           <ProgressBar
             progress={mealCount / 3}
-            label="Meal Logging"
+            label="Registro de Comidas"
             valueText={`${mealCount}/3`}
           />
         </Card>
@@ -77,7 +98,7 @@ const HomeScreen = ({ navigation }: any) => {
             onPress={() => navigation.navigate('Log')}
           >
             <Ionicons name="add-circle" size={24} color={COLORS.slate900} />
-            <Text style={styles.btnText}>Log Meal</Text>
+            <Text style={styles.btnText}>Registrar Comida</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, styles.doneBtn, isCompleted && styles.completedBtn]}
@@ -86,25 +107,27 @@ const HomeScreen = ({ navigation }: any) => {
             <Ionicons
               name={isCompleted ? "checkmark-circle" : "checkmark-circle-outline"}
               size={24}
-              color={isCompleted ? COLORS.white : COLORS.white}
+              color={COLORS.white}
             />
-            <Text style={[styles.btnText, { color: isCompleted ? COLORS.white : COLORS.white }]}>
-              {isCompleted ? 'Done!' : 'Done for Today'}
+            <Text style={[styles.btnText, { color: COLORS.white }]}>
+              {isCompleted ? '¡Listo!' : 'Listo por Hoy'}
             </Text>
           </TouchableOpacity>
         </View>
 
-        <Card style={styles.partnerCard}>
-          <View style={styles.partnerInfo}>
-             <View style={styles.partnerAvatars}>
-                <Image source={{ uri: partnerData.avatar }} style={styles.smallAvatar} />
-                <Image source={{ uri: 'https://i.pravatar.cc/150?u=user2' }} style={[styles.smallAvatar, { marginLeft: -10 }]} />
-             </View>
-             <Text style={styles.partnerText}>
-               <Text style={styles.bold}>{partnerData.name}</Text> and 4 others checked in today!
-             </Text>
-          </View>
-        </Card>
+        <TouchableOpacity onPress={() => navigation.navigate('Stats')}>
+          <Card style={styles.partnerCard}>
+            <View style={styles.partnerInfo}>
+               <View style={styles.partnerAvatars}>
+                  <Image source={{ uri: partnerData.avatar }} style={styles.smallAvatar} />
+                  <Image source={{ uri: 'https://i.pravatar.cc/150?u=user2' }} style={[styles.smallAvatar, { marginLeft: -10 }]} />
+               </View>
+               <Text style={styles.partnerText}>
+                 <Text style={styles.bold}>{partnerData.name}</Text> y 4 más registraron hoy!
+               </Text>
+            </View>
+          </Card>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -190,10 +213,6 @@ const styles = StyleSheet.create({
   pendingCircle: {
     backgroundColor: COLORS.slate100,
   },
-  dayIcon: {
-    fontSize: 12,
-    color: COLORS.primary,
-  },
   statusCard: {
     marginBottom: SPACING.md,
   },
@@ -208,10 +227,16 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
+  badgeCompleted: {
+    backgroundColor: COLORS.primary + '33',
+  },
   badgeText: {
     color: COLORS.primary,
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  badgeTextCompleted: {
+    color: COLORS.slate900,
   },
   actionRow: {
     flexDirection: 'row',
@@ -238,10 +263,6 @@ const styles = StyleSheet.create({
   },
   completedBtn: {
     backgroundColor: COLORS.primary,
-  },
-  btnIcon: {
-    fontSize: 24,
-    marginBottom: SPACING.xs,
   },
   btnText: {
     fontWeight: 'bold',

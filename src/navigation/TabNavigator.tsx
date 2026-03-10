@@ -29,6 +29,7 @@ const TabNavigator = () => {
         name="Home"
         component={HomeScreen}
         options={{
+          tabBarLabel: 'Inicio',
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />
         }}
       />
@@ -36,6 +37,7 @@ const TabNavigator = () => {
         name="Calendar"
         component={CalendarScreen}
         options={{
+          tabBarLabel: 'Calendario',
           tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />
         }}
       />
@@ -43,6 +45,7 @@ const TabNavigator = () => {
         name="Log"
         component={LogMealScreen}
         options={{
+          tabBarLabel: 'Registro',
           tabBarIcon: ({ color, size }) => <Ionicons name="restaurant" size={size} color={color} />
         }}
       />
@@ -50,6 +53,7 @@ const TabNavigator = () => {
         name="Stats"
         component={StatsScreen}
         options={{
+          tabBarLabel: 'Estadísticas',
           tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" size={size} color={color} />
         }}
       />
@@ -57,6 +61,7 @@ const TabNavigator = () => {
         name="Profile"
         component={ProfileScreen}
         options={{
+          tabBarLabel: 'Perfil',
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />
         }}
       />
