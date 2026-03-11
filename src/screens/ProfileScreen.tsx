@@ -73,6 +73,16 @@ const ProfileScreen = ({ navigation }: any) => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.menuItem}
+              onPress={() => navigation.navigate('Couple')}
+            >
+              <View style={styles.menuItemLeft}>
+                <Ionicons name="heart-outline" size={20} color={COLORS.slate500} />
+                <Text style={styles.menuText}>Vincular Pareja</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={COLORS.slate400} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
               onPress={() => Alert.alert('Notificaciones', 'Configuración de notificaciones próximamente.')}
             >
               <View style={styles.menuItemLeft}>

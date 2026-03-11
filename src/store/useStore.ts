@@ -90,8 +90,6 @@ export const useStore = create<FitTogetherState & StoreActions>()(
 
       // ── Initialize: Load all data (session already exists from App.tsx) ──
       initialize: async () => {
-        if (get().isInitialized && get().userId) return;
-
         set({ isLoading: true, error: null });
 
         try {
@@ -101,6 +99,17 @@ export const useStore = create<FitTogetherState & StoreActions>()(
           if (!session?.user) throw new Error('No se pudo autenticar');
 
           const uid = session.user.id;
+
+          // If same user is already initialized, skip reload
+          if (get().isInitialized && get().userId === uid) {
+            set({ isLoading: false });
+            return;
+          }
+
+          // Different user or first load — clear old cached data
+          if (get().userId && get().userId !== uid) {
+            get().cleanup();
+          }
 
           // 2. Get or create profile
           let profile = await api.getProfile(uid);
@@ -387,8 +396,19 @@ export const useStore = create<FitTogetherState & StoreActions>()(
         const channel = get().partnerChannel;
         if (channel) {
           api.unsubscribeFromPartner(channel);
-          set({ partnerChannel: null });
         }
+        set({
+          partnerChannel: null,
+          userId: null,
+          isInitialized: false,
+          isLoading: false,
+          error: null,
+          dailyLogs: {},
+          currentStreak: 0,
+          longestStreak: 0,
+          userProfile: defaultProfile,
+          partnerData: defaultPartner,
+        });
       },
     }),
     {

@@ -4,6 +4,7 @@ import TabNavigator from './TabNavigator';
 import DayDetailScreen from '../screens/DayDetailScreen';
 import LogMealScreen from '../screens/LogMealScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import CoupleScreen from '../screens/CoupleScreen';
 import { COLORS } from '../constants/theme';
 
 const Stack = createNativeStackNavigator();
@@ -35,6 +36,15 @@ const AppNavigator = () => {
         options={{
           headerShown: true,
           title: 'Editar Perfil',
+          headerTintColor: COLORS.slate900,
+        }}
+      />
+      <Stack.Screen
+        name="Couple"
+        component={CoupleScreen}
+        options={{
+          headerShown: true,
+          title: 'Mi Pareja',
           headerTintColor: COLORS.slate900,
         }}
       />
