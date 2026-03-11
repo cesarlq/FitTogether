@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput, Alert, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput, Alert, Image, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useStore } from '../store/useStore';
 import { COLORS, SPACING } from '../constants/theme';
 import MealSection from '../components/MealSection';
@@ -136,6 +136,11 @@ const LogMealScreen = ({ navigation, route }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
       <View style={styles.header}>
         {isFromStack ? (
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -160,7 +165,7 @@ const LogMealScreen = ({ navigation, route }: any) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.dateNav}>
           <TouchableOpacity onPress={handlePrevDay} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="chevron-back" size={20} color={COLORS.primary} />
@@ -280,6 +285,7 @@ const LogMealScreen = ({ navigation, route }: any) => {
            </TouchableOpacity>
         </View>
       )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

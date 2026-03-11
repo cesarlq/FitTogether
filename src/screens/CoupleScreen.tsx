@@ -11,6 +11,8 @@ import {
   ScrollView,
   Image,
   Share,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { COLORS, SPACING } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -399,7 +401,11 @@ const CoupleScreen = ({ navigation }: any) => {
   // No couple yet — show create or join
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.headerIcon}>
           <View style={styles.heartCircle}>
             <Ionicons name="people" size={32} color={COLORS.primary} />
@@ -468,6 +474,7 @@ const CoupleScreen = ({ navigation }: any) => {
           </View>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

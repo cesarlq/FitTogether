@@ -13,7 +13,7 @@ import { Session } from '@supabase/supabase-js';
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const { initialize, isInitialized, isLoading, setInitialData, dailyLogs, cleanup } = useStore();
+  const { initialize, isInitialized, isLoading, cleanup } = useStore();
 
   // Listen to auth state changes
   useEffect(() => {
@@ -44,13 +44,6 @@ export default function App() {
       initialize();
     }
   }, [session]);
-
-  // Seed demo data once initialized
-  useEffect(() => {
-    if (isInitialized && Object.keys(dailyLogs).length === 0) {
-      setInitialData();
-    }
-  }, [isInitialized]);
 
   // Loading auth
   if (authLoading) {

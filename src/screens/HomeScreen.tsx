@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, SafeAreaView, Alert } from 'react-native';
 import { useStore } from '../store/useStore';
 import { COLORS, SPACING } from '../constants/theme';
@@ -11,11 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 const WEEKDAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 const HomeScreen = ({ navigation }: any) => {
-  const { currentStreak, dailyLogs, partnerData, toggleComplete, setInitialData, userProfile } = useStore();
-
-  useEffect(() => {
-    setInitialData();
-  }, []);
+  const { currentStreak, dailyLogs, partnerData, toggleComplete, userProfile } = useStore();
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayLog = dailyLogs[today];

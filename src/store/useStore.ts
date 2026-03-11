@@ -275,9 +275,20 @@ export const useStore = create<FitTogetherState & StoreActions>()(
         // Sync to Supabase
         const uid = get().userId;
         if (uid) {
-          api.updateMeal(uid, date, type, value).catch((err) => {
-            console.error('Sync logMeal error:', err);
-          });
+          const currentLog = get().dailyLogs[date];
+          if (currentLog) {
+            api.upsertDailyLog(uid, {
+              date,
+              breakfast: currentLog.breakfast,
+              lunch: currentLog.lunch,
+              dinner: currentLog.dinner,
+              snacks: currentLog.snacks,
+              notes: currentLog.notes || '',
+              completed: currentLog.completed,
+            }).catch((err) => {
+              console.error('Sync logMeal error:', err);
+            });
+          }
         }
       },
 
@@ -306,9 +317,20 @@ export const useStore = create<FitTogetherState & StoreActions>()(
         // Sync to Supabase
         const uid = get().userId;
         if (uid) {
-          api.markDayCompleted(uid, date, newCompleted).catch((err) => {
-            console.error('Sync toggleComplete error:', err);
-          });
+          const currentLog = get().dailyLogs[date];
+          if (currentLog) {
+            api.upsertDailyLog(uid, {
+              date,
+              breakfast: currentLog.breakfast,
+              lunch: currentLog.lunch,
+              dinner: currentLog.dinner,
+              snacks: currentLog.snacks,
+              notes: currentLog.notes || '',
+              completed: currentLog.completed,
+            }).catch((err) => {
+              console.error('Sync toggleComplete error:', err);
+            });
+          }
         }
       },
 
@@ -325,9 +347,20 @@ export const useStore = create<FitTogetherState & StoreActions>()(
 
         const uid = get().userId;
         if (uid) {
-          api.updateNotes(uid, date, notes).catch((err) => {
-            console.error('Sync updateNotes error:', err);
-          });
+          const currentLog = get().dailyLogs[date];
+          if (currentLog) {
+            api.upsertDailyLog(uid, {
+              date,
+              breakfast: currentLog.breakfast,
+              lunch: currentLog.lunch,
+              dinner: currentLog.dinner,
+              snacks: currentLog.snacks,
+              notes: currentLog.notes || '',
+              completed: currentLog.completed,
+            }).catch((err) => {
+              console.error('Sync updateNotes error:', err);
+            });
+          }
         }
       },
 

@@ -5,6 +5,7 @@ import CalendarScreen from '../screens/CalendarScreen';
 import StatsScreen from '../screens/StatsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import LogMealScreen from '../screens/LogMealScreen';
+import CoupleScreen from '../screens/CoupleScreen';
 import { COLORS } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -47,6 +48,14 @@ const TabNavigator = () => {
         options={{
           tabBarLabel: 'Registro',
           tabBarIcon: ({ color, size }) => <Ionicons name="restaurant" size={size} color={color} />
+        }}
+      />
+      <Tab.Screen
+        name="Couple"
+        component={CoupleScreen}
+        options={{
+          tabBarLabel: 'Pareja',
+          tabBarIcon: ({ color, size }) => <Ionicons name="heart" size={size} color={color} />
         }}
       />
       <Tab.Screen
