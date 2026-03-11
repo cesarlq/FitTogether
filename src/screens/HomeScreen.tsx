@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 const WEEKDAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 const HomeScreen = ({ navigation }: any) => {
-  const { currentStreak, dailyLogs, partnerData, toggleComplete, setInitialData } = useStore();
+  const { currentStreak, dailyLogs, partnerData, toggleComplete, setInitialData, userProfile } = useStore();
 
   useEffect(() => {
     setInitialData();
@@ -40,7 +40,7 @@ const HomeScreen = ({ navigation }: any) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-            <Image source={{ uri: 'https://i.pravatar.cc/150?u=sam' }} style={styles.avatar} />
+            <Image source={{ uri: userProfile.avatar }} style={styles.avatar} />
           </TouchableOpacity>
           <Text style={styles.appName}>FitTogether</Text>
           <TouchableOpacity

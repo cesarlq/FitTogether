@@ -33,7 +33,7 @@ const ProfileScreen = ({ navigation }: any) => {
             onPress={() => navigation.navigate('EditProfile')}
           >
             <Image
-              source={{ uri: 'https://i.pravatar.cc/150?u=fit-together-user' }}
+              source={{ uri: userProfile.avatar }}
               style={styles.avatar}
             />
             <View style={styles.editBadge}>
