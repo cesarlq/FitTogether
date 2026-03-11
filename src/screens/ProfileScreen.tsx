@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image, ScrollView, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { useStore } from '../store/useStore';
 import { COLORS, SPACING } from '../constants/theme';
 import Card from '../components/Card';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../services/supabase';
 
 const ProfileScreen = ({ navigation }: any) => {
   const { userProfile, resetChallenge } = useStore();
@@ -91,6 +92,29 @@ const ProfileScreen = ({ navigation }: any) => {
               <Ionicons name="chevron-forward" size={20} color={COLORS.slate400} />
             </TouchableOpacity>
           </Card>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Sesión</Text>
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={() => {
+              Alert.alert(
+                'Cerrar Sesión',
+                '¿Estás seguro de que quieres cerrar sesión?',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  {
+                    text: 'Cerrar Sesión',
+                    onPress: () => supabase.auth.signOut(),
+                  },
+                ]
+              );
+            }}
+          >
+            <Ionicons name="log-out-outline" size={20} color={COLORS.white} />
+            <Text style={styles.logoutBtnText}>Cerrar Sesión</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -204,6 +228,20 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 16,
     color: COLORS.slate900,
+  },
+  logoutBtn: {
+    backgroundColor: COLORS.slate900,
+    padding: SPACING.md,
+    borderRadius: 12,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+  },
+  logoutBtnText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   resetBtn: {
     backgroundColor: COLORS.white,
