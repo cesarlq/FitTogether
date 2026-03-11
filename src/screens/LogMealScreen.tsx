@@ -1,20 +1,25 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput, Alert, Image, ActivityIndicator } from 'react-native';
 import { useStore } from '../store/useStore';
 import { COLORS, SPACING } from '../constants/theme';
 import MealSection from '../components/MealSection';
 import { format, parseISO, addDays, subDays } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as api from '../services/api';
+import { MealPhoto } from '../types';
 
 const LogMealScreen = ({ navigation, route }: any) => {
   const initialDate = route?.params?.date || format(new Date(), 'yyyy-MM-dd');
   const isFromStack = !!route?.params?.date;
 
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const { dailyLogs, logMeal, updateNotes } = useStore();
-  const todayLog = dailyLogs[selectedDate] || { breakfast: '', lunch: '', dinner: '', snacks: '', notes: '' };
+  const { dailyLogs, logMeal, updateNotes, addMealPhoto, removeMealPhoto, userId } = useStore();
+  const todayLog = dailyLogs[selectedDate] || { breakfast: '', lunch: '', dinner: '', snacks: '', notes: '', photos: [] };
+  const photos = todayLog.photos || [];
 
   const [notes, setNotes] = useState(todayLog.notes || '');
+  const [uploading, setUploading] = useState(false);
 
   const handleSaveNotes = useCallback(() => {
     updateNotes(selectedDate, notes);
@@ -50,7 +55,84 @@ const LogMealScreen = ({ navigation, route }: any) => {
     return format(parseISO(selectedDate), 'MMM d');
   };
 
-  const isToday = selectedDate >= format(new Date(), 'yyyy-MM-dd');
+  const pickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]) {
+      await handleUploadPhoto(result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu cámara.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]) {
+      await handleUploadPhoto(result.assets[0].uri);
+    }
+  };
+
+  const handleUploadPhoto = async (uri: string) => {
+    if (!userId) return;
+    setUploading(true);
+    try {
+      const publicUrl = await api.uploadMealPhoto(userId, selectedDate, uri, 'general');
+      const photo: MealPhoto = {
+        uri: publicUrl,
+        mealType: 'general',
+        createdAt: new Date().toISOString(),
+      };
+      addMealPhoto(selectedDate, photo);
+    } catch (err: any) {
+      console.error('Upload meal photo error:', err);
+      // Fallback: save local URI
+      const photo: MealPhoto = {
+        uri,
+        mealType: 'general',
+        createdAt: new Date().toISOString(),
+      };
+      addMealPhoto(selectedDate, photo);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const showPhotoOptions = () => {
+    Alert.alert('Agregar Foto', 'Elige una opción', [
+      { text: 'Tomar Foto', onPress: takePhoto },
+      { text: 'Elegir de Galería', onPress: pickPhoto },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  };
+
+  const handleDeletePhoto = (photoUri: string) => {
+    Alert.alert('Eliminar Foto', '¿Estás seguro de que quieres eliminar esta foto?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: () => removeMealPhoto(selectedDate, photoUri),
+      },
+    ]);
+  };
+
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const isToday = selectedDate >= todayStr;
+  const isEditable = selectedDate === todayStr;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -97,70 +179,107 @@ const LogMealScreen = ({ navigation, route }: any) => {
 
         <View style={styles.photoSection}>
            <Text style={styles.sectionTitle}>Fotos de Comidas</Text>
-           <View style={styles.photoRow}>
-              <TouchableOpacity
-                style={styles.uploadBtn}
-                onPress={() => Alert.alert('Próximamente', 'La subida de fotos estará disponible en una futura actualización.')}
-              >
-                 <Ionicons name="camera" size={24} color={COLORS.primary} />
-                 <Text style={styles.uploadText}>Subir Foto</Text>
-              </TouchableOpacity>
-              <View style={styles.mockPhoto}>
-                 <Text>🥗</Text>
+           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
+              <View style={styles.photoRow}>
+                {isEditable && (
+                  <TouchableOpacity
+                    style={styles.uploadBtn}
+                    onPress={showPhotoOptions}
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <ActivityIndicator color={COLORS.primary} />
+                    ) : (
+                      <>
+                        <Ionicons name="camera" size={24} color={COLORS.primary} />
+                        <Text style={styles.uploadText}>Agregar</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+                {photos.map((photo, index) => (
+                  <View key={`${photo.uri}-${index}`} style={styles.photoContainer}>
+                    <Image source={{ uri: photo.uri }} style={styles.photoImage} />
+                    {isEditable && (
+                      <TouchableOpacity
+                        style={styles.photoDeleteBtn}
+                        onPress={() => handleDeletePhoto(photo.uri)}
+                      >
+                        <Ionicons name="close-circle" size={22} color={COLORS.fail} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+                {photos.length === 0 && !isEditable && (
+                  <View style={styles.noPhotos}>
+                    <Ionicons name="image-outline" size={24} color={COLORS.slate400} />
+                    <Text style={styles.noPhotosText}>Sin fotos</Text>
+                  </View>
+                )}
               </View>
-           </View>
+           </ScrollView>
         </View>
+
+        {!isEditable && (
+          <View style={styles.readOnlyBanner}>
+            <Ionicons name="lock-closed-outline" size={16} color={COLORS.slate500} />
+            <Text style={styles.readOnlyText}>Solo puedes editar el registro de hoy</Text>
+          </View>
+        )}
 
         <MealSection
           title="Desayuno"
           icon="🌅"
           value={todayLog.breakfast}
           onChangeText={(val) => logMeal(selectedDate, 'breakfast', val)}
-          onSave={() => Alert.alert('Guardado', 'Desayuno actualizado.')}
+          editable={isEditable}
         />
         <MealSection
           title="Almuerzo"
           icon="☀️"
           value={todayLog.lunch}
           onChangeText={(val) => logMeal(selectedDate, 'lunch', val)}
-          onSave={() => Alert.alert('Guardado', 'Almuerzo actualizado.')}
+          editable={isEditable}
         />
         <MealSection
           title="Cena"
           icon="🌙"
           value={todayLog.dinner}
           onChangeText={(val) => logMeal(selectedDate, 'dinner', val)}
-          onSave={() => Alert.alert('Guardado', 'Cena actualizada.')}
+          editable={isEditable}
         />
         <MealSection
           title="Snacks"
           icon="🍪"
           value={todayLog.snacks}
           onChangeText={(val) => logMeal(selectedDate, 'snacks', val)}
-          onSave={() => Alert.alert('Guardado', 'Snacks actualizado.')}
+          editable={isEditable}
         />
 
         <View style={styles.notesSection}>
            <Text style={styles.sectionTitle}>Notas del Día</Text>
            <TextInput
-              style={styles.notesInput}
+              style={[styles.notesInput, !isEditable && styles.notesInputDisabled]}
               placeholder="¿Cómo fue tu digestión? ¿Cómo te sientes hoy?"
               multiline
               numberOfLines={4}
               value={notes}
               onChangeText={setNotes}
               onBlur={handleSaveNotes}
+              editable={isEditable}
            />
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
-         <TouchableOpacity style={styles.saveBtn} onPress={handleSaveAndGoBack}>
-            <Text style={styles.saveBtnText}>
-              {isFromStack ? 'Guardar y Volver' : 'Guardar Registro Diario'}
-            </Text>
-         </TouchableOpacity>
-      </View>
+      {isEditable && (
+        <View style={styles.footer}>
+           <TouchableOpacity style={styles.saveBtn} onPress={handleSaveAndGoBack}>
+              <Text style={styles.saveBtnText}>
+                {isFromStack ? 'Guardar y Volver' : 'Guardar Registro Diario'}
+              </Text>
+           </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -214,33 +333,73 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: SPACING.sm,
   },
+  photoScroll: {
+    marginHorizontal: -SPACING.md,
+    paddingHorizontal: SPACING.md,
+  },
   photoRow: {
     flexDirection: 'row',
     gap: SPACING.sm,
   },
   uploadBtn: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
+    width: 110,
+    height: 110,
+    borderRadius: 14,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: COLORS.primary + '4D',
     backgroundColor: COLORS.primary + '0D',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 4,
   },
   uploadText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     color: COLORS.slate900,
   },
-  mockPhoto: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
+  photoContainer: {
+    position: 'relative',
+  },
+  photoImage: {
+    width: 110,
+    height: 110,
+    borderRadius: 14,
+    backgroundColor: COLORS.slate100,
+  },
+  photoDeleteBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: COLORS.white,
+    borderRadius: 11,
+  },
+  noPhotos: {
+    width: 110,
+    height: 110,
+    borderRadius: 14,
     backgroundColor: COLORS.slate100,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 4,
+  },
+  noPhotosText: {
+    fontSize: 11,
+    color: COLORS.slate400,
+  },
+  readOnlyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.slate100,
+    padding: SPACING.md,
+    borderRadius: 12,
+    marginBottom: SPACING.lg,
+  },
+  readOnlyText: {
+    fontSize: 13,
+    color: COLORS.slate500,
+    fontWeight: '500',
   },
   notesSection: {
     marginTop: SPACING.md,
@@ -252,6 +411,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     minHeight: 100,
     textAlignVertical: 'top',
+  },
+  notesInputDisabled: {
+    opacity: 0.6,
   },
   footer: {
     position: 'absolute',

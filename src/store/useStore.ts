@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FitTogetherState, DailyLog, UserProfile, PartnerData } from '../types';
+import { FitTogetherState, DailyLog, UserProfile, PartnerData, MealPhoto } from '../types';
 import { format, subDays } from 'date-fns';
 import { supabase } from '../services/supabase';
 import * as api from '../services/api';
@@ -49,6 +49,8 @@ interface StoreActions {
   logWeight: (weight: number) => void;
   resetChallenge: () => void;
   setInitialData: () => void;
+  addMealPhoto: (date: string, photo: MealPhoto) => void;
+  removeMealPhoto: (date: string, photoUri: string) => void;
   refreshPartner: () => Promise<void>;
   cleanup: () => void;
 }
@@ -126,6 +128,10 @@ export const useStore = create<FitTogetherState & StoreActions>()(
           const dbLogs = await api.getDailyLogsByUser(uid);
           const logsMap: Record<string, DailyLog> = {};
           for (const log of dbLogs) {
+            let photos: MealPhoto[] = [];
+            if (log.photos) {
+              try { photos = JSON.parse(log.photos); } catch {}
+            }
             logsMap[log.date] = {
               date: log.date,
               breakfast: log.breakfast,
@@ -134,6 +140,7 @@ export const useStore = create<FitTogetherState & StoreActions>()(
               snacks: log.snacks,
               notes: log.notes || undefined,
               completed: log.completed,
+              photos,
             };
           }
 
@@ -191,6 +198,50 @@ export const useStore = create<FitTogetherState & StoreActions>()(
             isInitialized: true,
             error: err.message || 'Error al inicializar',
           });
+        }
+      },
+
+      // ── Add Meal Photo (optimistic + sync) ──
+      addMealPhoto: (date, photo) => {
+        set((state) => {
+          const logs = { ...state.dailyLogs };
+          if (!logs[date]) {
+            logs[date] = { date, breakfast: '', lunch: '', dinner: '', snacks: '', completed: false, photos: [] };
+          }
+          const existing = logs[date].photos || [];
+          logs[date] = { ...logs[date], photos: [...existing, photo] };
+          return { dailyLogs: logs };
+        });
+
+        const uid = get().userId;
+        if (uid) {
+          const updatedLog = get().dailyLogs[date];
+          const photosJson = JSON.stringify(updatedLog?.photos || []);
+          api.updatePhotos(uid, date, photosJson).catch((err) => {
+            console.error('Sync addMealPhoto error:', err);
+          });
+        }
+      },
+
+      // ── Remove Meal Photo (optimistic + sync) ──
+      removeMealPhoto: (date, photoUri) => {
+        set((state) => {
+          const logs = { ...state.dailyLogs };
+          if (!logs[date]) return state;
+          const photos = (logs[date].photos || []).filter(p => p.uri !== photoUri);
+          logs[date] = { ...logs[date], photos };
+          return { dailyLogs: logs };
+        });
+
+        const uid = get().userId;
+        if (uid) {
+          const updatedLog = get().dailyLogs[date];
+          const photosJson = JSON.stringify(updatedLog?.photos || []);
+          api.updatePhotos(uid, date, photosJson).catch((err) => {
+            console.error('Sync removeMealPhoto error:', err);
+          });
+          // Also delete from storage
+          api.deleteMealPhoto(photoUri).catch(() => {});
         }
       },
 

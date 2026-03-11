@@ -26,6 +26,7 @@ export interface DbDailyLog {
   snacks: string;
   notes: string;
   completed: boolean;
+  photos: string | null; // JSON array of photo URLs with metadata
   created_at: string;
   updated_at: string;
 }

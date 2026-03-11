@@ -56,29 +56,56 @@ export async function upsertDailyLog(
     snacks?: string;
     notes?: string;
     completed?: boolean;
+    photos?: string;
   }
 ): Promise<DbDailyLog> {
+  const payload: Record<string, any> = {
+    user_id: userId,
+    date: log.date,
+    breakfast: log.breakfast ?? '',
+    lunch: log.lunch ?? '',
+    dinner: log.dinner ?? '',
+    snacks: log.snacks ?? '',
+    notes: log.notes ?? '',
+    completed: log.completed ?? false,
+    updated_at: new Date().toISOString(),
+  };
+  if (log.photos !== undefined) payload.photos = log.photos;
+
   const { data, error } = await supabase
     .from('daily_logs')
-    .upsert(
-      {
-        user_id: userId,
-        date: log.date,
-        breakfast: log.breakfast ?? '',
-        lunch: log.lunch ?? '',
-        dinner: log.dinner ?? '',
-        snacks: log.snacks ?? '',
-        notes: log.notes ?? '',
-        completed: log.completed ?? false,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,date' }
-    )
+    .upsert(payload, { onConflict: 'user_id,date' })
     .select()
     .single();
 
   if (error) throw error;
   return data;
+}
+
+export async function updatePhotos(
+  userId: string,
+  date: string,
+  photosJson: string
+): Promise<DbDailyLog> {
+  const existing = await getDailyLog(userId, date);
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from('daily_logs')
+      .update({
+        photos: photosJson,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+      .eq('date', date)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  return upsertDailyLog(userId, { date, photos: photosJson });
 }
 
 export async function updateMeal(

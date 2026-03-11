@@ -297,17 +297,26 @@ const CoupleScreen = ({ navigation }: any) => {
                     </View>
 
                     {meals.length > 0 ? (
-                      meals.map((meal) => (
-                        <View key={meal.key} style={styles.mealRow}>
-                          <Ionicons
-                            name={MEAL_ICONS[meal.key] as any}
-                            size={16}
-                            color={COLORS.slate400}
-                          />
-                          <Text style={styles.mealLabel}>{MEAL_LABELS[meal.key]}</Text>
-                          <Text style={styles.mealValue} numberOfLines={1}>{meal.value}</Text>
-                        </View>
-                      ))
+                      meals.map((meal) => {
+                        const items = meal.value.split(',').map(s => s.trim()).filter(Boolean);
+                        return (
+                          <View key={meal.key} style={styles.mealRow}>
+                            <Ionicons
+                              name={MEAL_ICONS[meal.key] as any}
+                              size={16}
+                              color={COLORS.slate400}
+                            />
+                            <Text style={styles.mealLabel}>{MEAL_LABELS[meal.key]}</Text>
+                            <View style={styles.mealChips}>
+                              {items.map((item, idx) => (
+                                <View key={`${item}-${idx}`} style={styles.mealChip}>
+                                  <Text style={styles.mealChipText}>{item}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          </View>
+                        );
+                      })
                     ) : (
                       <Text style={styles.noMealsText}>Sin comidas registradas</Text>
                     )}
@@ -824,7 +833,7 @@ const styles = StyleSheet.create({
   },
   mealRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingVertical: 6,
     gap: SPACING.sm,
   },
@@ -833,10 +842,22 @@ const styles = StyleSheet.create({
     color: COLORS.slate500,
     width: 70,
   },
-  mealValue: {
-    fontSize: 14,
-    color: COLORS.slate900,
+  mealChips: {
     flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  mealChip: {
+    backgroundColor: COLORS.primary + '1A',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  mealChipText: {
+    fontSize: 12,
+    color: COLORS.slate900,
+    fontWeight: '500',
   },
   noMealsText: {
     fontSize: 13,

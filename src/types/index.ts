@@ -1,3 +1,10 @@
+export interface MealPhoto {
+  id?: string;
+  uri: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'general';
+  createdAt?: string;
+}
+
 export interface DailyLog {
   date: string; // ISO format YYYY-MM-DD
   breakfast: string;
@@ -6,7 +13,7 @@ export interface DailyLog {
   snacks: string;
   notes?: string;
   completed: boolean;
-  imageUri?: string;
+  photos?: MealPhoto[];
 }
 
 export interface PartnerData {
