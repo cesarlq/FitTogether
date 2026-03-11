@@ -18,6 +18,30 @@ import { useStore } from '../store/useStore';
 import { supabase } from '../services/supabase';
 import * as api from '../services/api';
 
+interface PartnerLog {
+  date: string;
+  breakfast: string;
+  lunch: string;
+  dinner: string;
+  snacks: string;
+  notes: string;
+  completed: boolean;
+}
+
+const MEAL_ICONS: Record<string, string> = {
+  breakfast: 'sunny-outline',
+  lunch: 'restaurant-outline',
+  dinner: 'moon-outline',
+  snacks: 'cafe-outline',
+};
+
+const MEAL_LABELS: Record<string, string> = {
+  breakfast: 'Desayuno',
+  lunch: 'Almuerzo',
+  dinner: 'Cena',
+  snacks: 'Snacks',
+};
+
 const CoupleScreen = ({ navigation }: any) => {
   const { userId, partnerData, refreshPartner } = useStore();
   const [coupleCode, setCoupleCode] = useState<string | null>(null);
@@ -26,10 +50,43 @@ const CoupleScreen = ({ navigation }: any) => {
   const [joining, setJoining] = useState(false);
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [hasCouple, setHasCouple] = useState(false);
+  const [partnerLogs, setPartnerLogs] = useState<PartnerLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
 
   useEffect(() => {
     loadCoupleStatus();
   }, []);
+
+  const loadPartnerLogs = async (partnerId: string) => {
+    setLogsLoading(true);
+    try {
+      // Load last 7 days of partner logs
+      const today = new Date();
+      const logs: PartnerLog[] = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const log = await api.getDailyLog(partnerId, dateStr);
+        if (log) {
+          logs.push({
+            date: log.date,
+            breakfast: log.breakfast,
+            lunch: log.lunch,
+            dinner: log.dinner,
+            snacks: log.snacks,
+            notes: log.notes || '',
+            completed: log.completed,
+          });
+        }
+      }
+      setPartnerLogs(logs);
+    } catch (err) {
+      console.error('Load partner logs error:', err);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
 
   const loadCoupleStatus = async () => {
     if (!userId) return;
@@ -49,6 +106,11 @@ const CoupleScreen = ({ navigation }: any) => {
         // Get partner
         const partner = await api.getPartnerProfile(userId);
         setPartnerProfile(partner);
+
+        // Load partner daily logs
+        if (partner) {
+          await loadPartnerLogs(partner.id);
+        }
       }
     } catch (err) {
       console.error('Load couple error:', err);
@@ -183,6 +245,83 @@ const CoupleScreen = ({ navigation }: any) => {
                 <Text style={styles.partnerStatLabel}>Semana</Text>
               </View>
             </View>
+          </View>
+
+          {/* Partner Daily Logs */}
+          <View style={styles.logsSection}>
+            <View style={styles.logsSectionHeader}>
+              <Text style={styles.logsSectionTitle}>Registro de Comidas</Text>
+              <TouchableOpacity onPress={() => partnerProfile && loadPartnerLogs(partnerProfile.id)}>
+                <Ionicons name="refresh-outline" size={18} color={COLORS.primary} />
+              </TouchableOpacity>
+            </View>
+
+            {logsLoading ? (
+              <ActivityIndicator color={COLORS.primary} style={{ marginVertical: SPACING.lg }} />
+            ) : partnerLogs.length === 0 ? (
+              <View style={styles.emptyLogs}>
+                <Ionicons name="document-text-outline" size={32} color={COLORS.slate400} />
+                <Text style={styles.emptyLogsText}>Tu pareja aún no tiene registros</Text>
+              </View>
+            ) : (
+              partnerLogs.map((log) => {
+                const dateObj = new Date(log.date + 'T12:00:00');
+                const isToday = log.date === new Date().toISOString().split('T')[0];
+                const dayName = isToday
+                  ? 'Hoy'
+                  : dateObj.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+
+                const meals = [
+                  { key: 'breakfast', value: log.breakfast },
+                  { key: 'lunch', value: log.lunch },
+                  { key: 'dinner', value: log.dinner },
+                  { key: 'snacks', value: log.snacks },
+                ].filter(m => m.value && m.value.trim() !== '');
+
+                return (
+                  <View key={log.date} style={styles.logCard}>
+                    <View style={styles.logCardHeader}>
+                      <Text style={[styles.logDate, isToday && styles.logDateToday]}>
+                        {dayName}
+                      </Text>
+                      <View style={[styles.logBadge, log.completed ? styles.logBadgeComplete : styles.logBadgePending]}>
+                        <Ionicons
+                          name={log.completed ? 'checkmark-circle' : 'ellipse-outline'}
+                          size={12}
+                          color={log.completed ? COLORS.primary : COLORS.slate400}
+                        />
+                        <Text style={[styles.logBadgeText, log.completed && styles.logBadgeTextComplete]}>
+                          {log.completed ? 'Completado' : 'En Progreso'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {meals.length > 0 ? (
+                      meals.map((meal) => (
+                        <View key={meal.key} style={styles.mealRow}>
+                          <Ionicons
+                            name={MEAL_ICONS[meal.key] as any}
+                            size={16}
+                            color={COLORS.slate400}
+                          />
+                          <Text style={styles.mealLabel}>{MEAL_LABELS[meal.key]}</Text>
+                          <Text style={styles.mealValue} numberOfLines={1}>{meal.value}</Text>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={styles.noMealsText}>Sin comidas registradas</Text>
+                    )}
+
+                    {log.notes ? (
+                      <View style={styles.notesRow}>
+                        <Ionicons name="chatbubble-outline" size={14} color={COLORS.slate400} />
+                        <Text style={styles.notesText} numberOfLines={2}>{log.notes}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })
+            )}
           </View>
 
           {/* Couple Code */}
@@ -605,6 +744,120 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  // Partner Logs
+  logsSection: {
+    marginBottom: SPACING.lg,
+  },
+  logsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  logsSectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.slate500,
+    textTransform: 'uppercase',
+  },
+  emptyLogs: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xl,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.slate100,
+  },
+  emptyLogsText: {
+    marginTop: SPACING.sm,
+    fontSize: 13,
+    color: COLORS.slate400,
+  },
+  logCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.slate100,
+  },
+  logCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.slate100,
+  },
+  logDate: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: COLORS.slate900,
+    textTransform: 'capitalize',
+  },
+  logDateToday: {
+    color: COLORS.primary,
+  },
+  logBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  logBadgeComplete: {
+    backgroundColor: COLORS.primary + '1A',
+  },
+  logBadgePending: {
+    backgroundColor: COLORS.slate100,
+  },
+  logBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: COLORS.slate400,
+  },
+  logBadgeTextComplete: {
+    color: COLORS.slate900,
+  },
+  mealRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    gap: SPACING.sm,
+  },
+  mealLabel: {
+    fontSize: 12,
+    color: COLORS.slate500,
+    width: 70,
+  },
+  mealValue: {
+    fontSize: 14,
+    color: COLORS.slate900,
+    flex: 1,
+  },
+  noMealsText: {
+    fontSize: 13,
+    color: COLORS.slate400,
+    fontStyle: 'italic',
+    paddingVertical: SPACING.sm,
+  },
+  notesRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+    marginTop: SPACING.xs,
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.slate100,
+  },
+  notesText: {
+    fontSize: 13,
+    color: COLORS.slate500,
+    flex: 1,
+    fontStyle: 'italic',
   },
   unlinkBtn: {
     flexDirection: 'row',
