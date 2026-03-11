@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "FitTogether",
+    "slug": "fittogether",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,22 +9,42 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#f5f8f6"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.fittogether.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FitTogether necesita acceso a tu cámara para tomar fotos de tus comidas.",
+        "NSPhotoLibraryUsageDescription": "FitTogether necesita acceso a tu galería para seleccionar fotos de tus comidas."
+      }
     },
     "android": {
+      "package": "com.fittogether.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#f5f8f6",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "extra": {
+      "eas": {
+        "projectId": "eee1541b-4b56-49f5-9f59-da7ed96a5643"
+      }
+    },
+    "owner": "cesarlq",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/eee1541b-4b56-49f5-9f59-da7ed96a5643"
     }
   }
 }
